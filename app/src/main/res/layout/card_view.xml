@@ -10,23 +10,26 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
         android:padding="5dp">
 
         <TextView
             android:id="@+id/name"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginBottom="10dp"
-            android:layout_marginRight="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:clickable="true"
-            android:gravity="right|bottom"
+            android:focusable="false"
             tools:text="asdads" />
 
         <TextView
             android:id="@+id/content_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:clickable="false"
+            android:focusable="false"
             tools:text="asdads" />
 
     </RelativeLayout>

@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.biginnov.syncnote.data.Note;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
@@ -16,16 +17,20 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
     private List<Note> actors;
 
     private Context mContext;
+    private View.OnClickListener mOnItemClickListener;
 
-    public NoteAdapter(Context context, List<Note> actors) {
+    public NoteAdapter(Context context, List<Note> actors, View.OnClickListener listener) {
         this.mContext = context;
         this.actors = actors;
+        this.mOnItemClickListener = listener;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.card_view, viewGroup, false);
-        return new ViewHolder(v);
+        ViewHolder vh = new ViewHolder(v);
+        v.setOnClickListener(mOnItemClickListener);
+        return vh;
     }
 
     @Override
@@ -37,6 +42,20 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
     @Override
     public int getItemCount() {
         return actors == null ? 0 : actors.size();
+    }
+
+    public Note getItem(int position) {
+        Note device = null;
+        if (position < actors.size()) {
+            device = actors.get(position);
+        }
+        return device;
+    }
+
+    public void update(ArrayList<Note> devices) {
+        actors.clear();
+        actors = devices;
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
