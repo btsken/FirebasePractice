@@ -11,13 +11,13 @@ import com.biginnov.syncnote.data.Note;
 
 import java.util.List;
 
-public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
+public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
 
     private List<Note> actors;
 
     private Context mContext;
 
-    public MyAdapter(Context context, List<Note> actors) {
+    public NoteAdapter(Context context, List<Note> actors) {
         this.mContext = context;
         this.actors = actors;
     }
@@ -31,7 +31,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
         Note p = actors.get(i);
-        viewHolder.mTextView.setText(p.getTitle());
+        viewHolder.mTitle.setText(p.getTitle());
     }
 
     @Override
@@ -40,11 +40,13 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView mTextView;
+        public TextView mTitle;
+        public TextView mContent;
 
         public ViewHolder(View v) {
             super(v);
-            mTextView = (TextView) v.findViewById(R.id.name);
+            mTitle = (TextView) v.findViewById(R.id.name);
+            mContent = (TextView) v.findViewById(R.id.content_textview);
         }
     }
 }

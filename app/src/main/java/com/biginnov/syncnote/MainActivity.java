@@ -7,34 +7,47 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import com.biginnov.syncnote.data.Note;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 
-public class MainActivity extends AppCompatActivity
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private Firebase mFirebase;
 
+    private RecyclerView mRecyclerView;
+
+    private List<Note> mNotes;
+    private NoteAdapter mNoteAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        findViews();
 
         mFirebase = new Firebase("https://syncnote.firebaseio.com/");
+        mNotes = new ArrayList<>();
+        mNoteAdapter = new NoteAdapter(this, mNotes);
+        mRecyclerView.setAdapter(mNoteAdapter);
+    }
 
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    private void findViews() {
+        mRecyclerView = getView(R.id.list);
+
+        Toolbar toolbar = getView(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = getView(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -46,32 +59,14 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = getView(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = getView(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        //
-
-        mFirebase.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                System.out.println("There are " + snapshot.getChildrenCount() + " blog posts");
-                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                    Note post = postSnapshot.getValue(Note.class);
-                    System.out.println(post.getTitle() + " - " + post.getContent());
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                System.out.println("The read failed: " + firebaseError.getMessage());
-            }
-        });
     }
 
     @Override
