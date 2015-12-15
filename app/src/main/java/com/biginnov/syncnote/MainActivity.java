@@ -6,11 +6,13 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,6 +34,7 @@ public class MainActivity extends BaseActivity
     private Firebase mFirebase;
 
     private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     private List<Note> mNotes;
     private NoteAdapter mNoteAdapter;
@@ -51,15 +54,15 @@ public class MainActivity extends BaseActivity
                 mNotes.clear();
 
                 for (DataSnapshot postSnapshot : snapshot.getChildren()) {
+                    LogUtils.d("onDataChange", postSnapshot.getValue(Note.class));
                     mNotes.add(postSnapshot.getValue(Note.class));
                 }
 
-                if(mNoteAdapter == null) {
+                if (mNoteAdapter == null) {
                     mNoteAdapter = new NoteAdapter(MainActivity.this, mNotes, mOnItemClickListener);
                     mRecyclerView.setAdapter(mNoteAdapter);
                 } else {
                     mNoteAdapter.update(mNotes);
-                    mNoteAdapter.notifyDataSetChanged();
                 }
             }
 
@@ -71,6 +74,7 @@ public class MainActivity extends BaseActivity
     }
 
     private void findViews() {
+        mSwipeRefreshLayout = getView(R.id.swipeRefreshLayout);
         mRecyclerView = getView(R.id.list);
         mRecyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager layoutManager =
@@ -103,6 +107,51 @@ public class MainActivity extends BaseActivity
 
         NavigationView navigationView = getView(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new
+                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+                    @Override
+                    public boolean onMove(RecyclerView recyclerView,
+                                          RecyclerView.ViewHolder viewHolder,
+                                          RecyclerView.ViewHolder target) {
+                        return false;
+                    }
+
+                    @Override
+                    public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                        Note note = mNoteAdapter.getItem(viewHolder.getAdapterPosition());
+                        if (note != null) {
+                            mFirebase.child(note.getId()).removeValue();
+                        }
+                    }
+                };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(mRecyclerView);
+
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Refresh items
+                refreshItems();
+            }
+        });
+    }
+
+    private void refreshItems() {
+        // Load items
+        // ...
+
+        // Load complete
+        onItemsLoadComplete();
+    }
+
+    private void onItemsLoadComplete() {
+        // Update the adapter and notify data set changed
+        // ...
+
+        // Stop refresh animation
+        mSwipeRefreshLayout.setRefreshing(false);
     }
 
     private View.OnClickListener mOnItemClickListener = new View.OnClickListener() {
@@ -200,17 +249,13 @@ public class MainActivity extends BaseActivity
     }
 
     private List<Note> filter(List<Note> models, String query) {
-
-        if (query.isEmpty()) {
-            return models;
-        }
-
         query = query.toLowerCase();
 
         final List<Note> filteredModelList = new ArrayList<>();
         for (Note model : models) {
-            final String text = model.getTitle().toLowerCase();
-            if (text.contains(query)) {
+            final String title = model.getTitle().toLowerCase();
+            final String content = model.getContent().toLowerCase();
+            if (title.contains(query) || content.contains(query)) {
                 filteredModelList.add(model);
             }
         }

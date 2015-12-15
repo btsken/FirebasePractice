@@ -54,7 +54,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
 
     public void update(List<Note> notes) {
         mNotes.clear();
-        mNotes = notes;
+        mNotes.addAll(notes);
         notifyDataSetChanged();
     }
 
