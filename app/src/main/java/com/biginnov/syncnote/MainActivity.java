@@ -4,10 +4,12 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,16 +17,17 @@ import android.view.View;
 
 import com.biginnov.syncnote.data.Note;
 import com.biginnov.syncnote.utils.LogUtils;
-import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        SearchView.OnQueryTextListener {
 
     private Firebase mFirebase;
 
@@ -41,37 +44,28 @@ public class MainActivity extends BaseActivity
 
         mFirebase = new Firebase("https://syncnote.firebaseio.com/").child(Note.class.getSimpleName());
         mNotes = new ArrayList<>();
-        mNoteAdapter = new NoteAdapter(this, mNotes, mOnItemClickListener);
-        mRecyclerView.setAdapter(mNoteAdapter);
 
-        //Firebase - Recebe mensagem
-        mFirebase.addChildEventListener(new ChildEventListener() {
+        mFirebase.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                if (dataSnapshot != null && dataSnapshot.getValue() != null) {
-                    //Firebase - Converte a resposta em um objeto do tipo Chat
-                    Note model = dataSnapshot.getValue(Note.class);
+            public void onDataChange(DataSnapshot snapshot) {
+                mNotes.clear();
 
-                    mNotes.add(model);
-                    mRecyclerView.scrollToPosition(mNotes.size() - 1);
-                    mNoteAdapter.notifyItemInserted(mNotes.size() - 1);
+                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
+                    mNotes.add(postSnapshot.getValue(Note.class));
+                }
+
+                if(mNoteAdapter == null) {
+                    mNoteAdapter = new NoteAdapter(MainActivity.this, mNotes, mOnItemClickListener);
+                    mRecyclerView.setAdapter(mNoteAdapter);
+                } else {
+                    mNoteAdapter.update(mNotes);
+                    mNoteAdapter.notifyDataSetChanged();
                 }
             }
 
             @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-            }
-
-            @Override
             public void onCancelled(FirebaseError firebaseError) {
+                System.out.println("The read failed: " + firebaseError.getMessage());
             }
         });
     }
@@ -145,6 +139,10 @@ public class MainActivity extends BaseActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+
+        final MenuItem item = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
+        searchView.setOnQueryTextListener(this);
         return true;
     }
 
@@ -186,5 +184,36 @@ public class MainActivity extends BaseActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String query) {
+        final List<Note> filteredModelList = filter(mNotes, query);
+        mNoteAdapter.animateTo(filteredModelList);
+        mRecyclerView.scrollToPosition(0);
+        return true;
+    }
+
+    private List<Note> filter(List<Note> models, String query) {
+
+        if (query.isEmpty()) {
+            return models;
+        }
+
+        query = query.toLowerCase();
+
+        final List<Note> filteredModelList = new ArrayList<>();
+        for (Note model : models) {
+            final String text = model.getTitle().toLowerCase();
+            if (text.contains(query)) {
+                filteredModelList.add(model);
+            }
+        }
+        return filteredModelList;
     }
 }

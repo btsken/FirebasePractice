@@ -45,6 +45,7 @@ public class LoginActivity extends BaseActivity {
 
         showProgressDialog();
 
+        Firebase.setAndroidContext(this);
         mFirebase = new Firebase("https://syncnote.firebaseio.com/");
 
         // Set up the login form.

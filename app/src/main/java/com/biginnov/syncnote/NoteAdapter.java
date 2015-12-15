@@ -14,14 +14,14 @@ import java.util.List;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
 
-    private List<Note> actors;
+    private List<Note> mNotes = new ArrayList<>();
 
     private Context mContext;
     private View.OnClickListener mOnItemClickListener;
 
     public NoteAdapter(Context context, List<Note> actors, View.OnClickListener listener) {
         this.mContext = context;
-        this.actors = actors;
+        mNotes = new ArrayList<>(actors);
         this.mOnItemClickListener = listener;
     }
 
@@ -35,26 +35,26 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
-        Note p = actors.get(i);
+        Note p = mNotes.get(i);
         viewHolder.mTitle.setText(p.getTitle());
     }
 
     @Override
     public int getItemCount() {
-        return actors == null ? 0 : actors.size();
+        return mNotes == null ? 0 : mNotes.size();
     }
 
     public Note getItem(int position) {
         Note device = null;
-        if (position < actors.size()) {
-            device = actors.get(position);
+        if (position < mNotes.size()) {
+            device = mNotes.get(position);
         }
         return device;
     }
 
-    public void update(ArrayList<Note> devices) {
-        actors.clear();
-        actors = devices;
+    public void update(List<Note> notes) {
+        mNotes.clear();
+        mNotes = notes;
         notifyDataSetChanged();
     }
 
@@ -66,6 +66,57 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
             super(v);
             mTitle = (TextView) v.findViewById(R.id.name);
             mContent = (TextView) v.findViewById(R.id.content_textview);
+        }
+    }
+
+    public Note removeItem(int position) {
+        final Note note = mNotes.remove(position);
+        notifyItemRemoved(position);
+        return note;
+    }
+
+    public void addItem(int position, Note note) {
+        mNotes.add(position, note);
+        notifyItemInserted(position);
+    }
+
+    public void moveItem(int fromPosition, int toPosition) {
+        final Note note = mNotes.remove(fromPosition);
+        mNotes.add(toPosition, note);
+        notifyItemMoved(fromPosition, toPosition);
+    }
+
+    public void animateTo(List<Note> models) {
+        applyAndAnimateRemovals(models);
+        applyAndAnimateAdditions(models);
+        applyAndAnimateMovedItems(models);
+    }
+
+    private void applyAndAnimateRemovals(List<Note> newModels) {
+        for (int i = mNotes.size() - 1; i >= 0; i--) {
+            final Note model = mNotes.get(i);
+            if (!newModels.contains(model)) {
+                removeItem(i);
+            }
+        }
+    }
+
+    private void applyAndAnimateAdditions(List<Note> newModels) {
+        for (int i = 0, count = newModels.size(); i < count; i++) {
+            final Note model = newModels.get(i);
+            if (!mNotes.contains(model)) {
+                addItem(i, model);
+            }
+        }
+    }
+
+    private void applyAndAnimateMovedItems(List<Note> newModels) {
+        for (int toPosition = newModels.size() - 1; toPosition >= 0; toPosition--) {
+            final Note model = newModels.get(toPosition);
+            final int fromPosition = mNotes.indexOf(model);
+            if (fromPosition >= 0 && fromPosition != toPosition) {
+                moveItem(fromPosition, toPosition);
+            }
         }
     }
 }
